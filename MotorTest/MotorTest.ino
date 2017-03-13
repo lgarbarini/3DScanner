@@ -1,4 +1,22 @@
 
+#ifndef WIRE_H
+#include <Wire.h>
+#endif
+
+#ifndef VL53L0X_h
+#include "VL53L0X.h"
+#endif
+
+#define LIDAR
+#define HIGH_SPEED
+//#define ULTRASOUND
+
+
+#if defined LIDAR
+
+VL53L0X sensor;
+
+#endif
 
 #define step0 10
 #define step1 5
@@ -17,9 +35,8 @@
 
 long duration;
 
-
-
 void setup() {
+  
   pinMode(step0, OUTPUT);
   pinMode(step1, OUTPUT);
   pinMode(M0_MS1, OUTPUT);
@@ -60,11 +77,35 @@ void setup() {
   //enable motors
   digitalWrite(EN0, LOW);
   digitalWrite(EN1, LOW);  
-
+#if defined ULTRASOUND
   //Ultrasound
   pinMode(TRIG, OUTPUT); // Sets the trigPin as an Output
   pinMode(ECHO, INPUT); // Sets the echoPin as an Input
+#endif
+
+#if defined LIDAR
+
+  Wire.begin();
+
+  sensor.init();
+  sensor.setTimeout(500);
+
+  #if defined LONG_RANGE
+    // lower the return signal rate limit (default is 0.25 MCPS)
+    sensor.setSignalRateLimit(0.1);
+    // increase laser pulse periods (defaults are 14 and 10 PCLKs)
+    sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodPreRange, 18);
+    sensor.setVcselPulsePeriod(VL53L0X::VcselPeriodFinalRange, 14);
+  #endif
   
+  #if defined HIGH_SPEED
+    // reduce timing budget to 20 ms (default is about 33 ms)
+    sensor.setMeasurementTimingBudget(20000);
+  #elif defined HIGH_ACCURACY
+    // increase timing budget to 200 ms
+    sensor.setMeasurementTimingBudget(200000);
+  #endif
+#endif
   delay(2000);
   Serial.begin(250000);
 }
@@ -129,6 +170,7 @@ void reset(){
 }
 
 int getDist() {
+  #if defined ULTRASOUND
   int distance;
   digitalWrite(TRIG, LOW);
   delayMicroseconds(2);
@@ -142,5 +184,11 @@ int getDist() {
   distance= duration*0.034/2;
   if (duration ==0) distance = 255;
   return distance;
+  #endif
+  #if defined LIDAR
+
+  return sensor.readRangeSingleMillimeters();
+  
+  #endif
 }
 
