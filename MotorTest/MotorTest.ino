@@ -10,14 +10,16 @@
 #define LIDAR
 #define HIGH_SPEED
 //#define ULTRASOUND
-
-
+//#define LONGRANGE
+//#define HIGH_ACCURACY
 #if defined LIDAR
 
 VL53L0X sensor;
 
 #endif
 
+#define step_delay 2000
+#define step_delay_high 500
 #define step0 10
 #define step1 5
 #define M0_MS1 7
@@ -88,7 +90,7 @@ void setup() {
   Wire.begin();
 
   sensor.init();
-  sensor.setTimeout(500);
+  sensor.setTimeout(1000);
 
   #if defined LONG_RANGE
     // lower the return signal rate limit (default is 0.25 MCPS)
@@ -119,9 +121,11 @@ void loop() {
       getLine(100);
       resetLine(100);
       Serial.print('\n');
+      delay(2);
       armStep();
+      delay(5);
     }
-  Serial.write("hello");
+  Serial.println("hello");
   reset();
   }
   digitalWrite(EN0, HIGH);
@@ -132,9 +136,9 @@ void loop() {
 void armStep() {
   for (int i = 0; i < 1; i++) {
     digitalWrite(step0, HIGH);
-    delayMicroseconds(500);
+    delayMicroseconds(step_delay_high);
     digitalWrite(step0, LOW);
-    delayMicroseconds(500);
+    delayMicroseconds(step_delay);
   }
 }
 
@@ -148,17 +152,19 @@ void getLine(int numLines) {
 
 void resetLine(int numLines) {
   digitalWrite(DIR1, LOW);
+  delayMicroseconds(step_delay);
   for (int j = 0; j < numLines; j++) {
     senseStep();
   }
+  delayMicroseconds(step_delay);
   digitalWrite(DIR1, HIGH);
 }
 
 void senseStep() {
   digitalWrite(step1, HIGH);
-  delayMicroseconds(500);
+  delayMicroseconds(step_delay_high);
   digitalWrite(step1, LOW);
-  delayMicroseconds(500);
+  delayMicroseconds(step_delay);
 }
 
 void reset(){
@@ -191,4 +197,5 @@ int getDist() {
   
   #endif
 }
+
 
