@@ -7,6 +7,7 @@
 #include "VL53L0X.h"
 #endif
 
+//use #defines to configure LIDAR (see library for more details)
 #define LIDAR
 #define HIGH_SPEED
 //#define ULTRASOUND
@@ -18,8 +19,11 @@ VL53L0X sensor;
 
 #endif
 
+//defind delays for step pulses
 #define step_delay 2000
 #define step_delay_high 500
+
+//define pins
 #define step0 10
 #define step1 5
 #define M0_MS1 7
@@ -35,10 +39,12 @@ VL53L0X sensor;
 #define TRIG  3
 #define ECHO  4
 
+
 long duration;
 
 void setup() {
   
+  //setup pinmodes for motor controllers
   pinMode(step0, OUTPUT);
   pinMode(step1, OUTPUT);
   pinMode(M0_MS1, OUTPUT);
@@ -68,7 +74,7 @@ void setup() {
   digitalWrite(DIR1, HIGH);
 
   
-  //make motors use 1/16th microsteps
+  //make motors use 1/2th microsteps
   digitalWrite(M0_MS1, HIGH);
   digitalWrite(M0_MS2, LOW);
   digitalWrite(M0_MS3, LOW);
@@ -85,6 +91,7 @@ void setup() {
   pinMode(ECHO, INPUT); // Sets the echoPin as an Input
 #endif
 
+//setup lidar
 #if defined LIDAR
 
   Wire.begin();
@@ -113,33 +120,38 @@ void setup() {
 }
 
 void loop() {
-  // put your main code here, to run repeatedly:
+  //wait for character on serial port before starting scan
   if (Serial.read() != -1) {
+    //enable motors
     digitalWrite(EN0, LOW);
     digitalWrite(EN1, LOW); 
     for (int i = 0; i < 100; i++) {
+      //step 100 forward, 100 back
       getLine(100);
       resetLine(100);
       Serial.print('\n');
       delay(2);
+      //move arm
       armStep();
       delay(5);
     }
   Serial.println("hello");
+  //return to original position
   reset();
   }
+  //wait for motor to stop
+  delay(1000);
+  //disable motor drivers
   digitalWrite(EN0, HIGH);
   digitalWrite(EN1, HIGH); 
 }
 
 
 void armStep() {
-  for (int i = 0; i < 1; i++) {
-    digitalWrite(step0, HIGH);
-    delayMicroseconds(step_delay_high);
-    digitalWrite(step0, LOW);
-    delayMicroseconds(step_delay);
-  }
+  digitalWrite(step0, HIGH);
+  delayMicroseconds(step_delay_high);
+  digitalWrite(step0, LOW);
+  delayMicroseconds(step_delay);
 }
 
 void getLine(int numLines) {
